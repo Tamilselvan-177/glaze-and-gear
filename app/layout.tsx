@@ -1,11 +1,11 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Montserrat, Cinzel_Decorative } from "next/font/google";
 import { Metadata } from "next";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat" });
+const cinzelDecorative = Cinzel_Decorative({ subsets: ["latin"], weight: ["400", "700", "900"], variable: "--font-cinzel-decorative" });
 
 export const metadata: Metadata = {
   title: {
@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-[#F9EAEA]/30 text-[#0a0a0a]`}>
+      <body className={`${montserrat.variable} ${cinzelDecorative.variable} font-sans bg-[#F9EAEA]/30 text-[#0a0a0a]`}>
         <Providers>
           <Navbar />
           {children}
