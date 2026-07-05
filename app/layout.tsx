@@ -1,5 +1,6 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Providers } from "@/components/Providers";
 import { Montserrat, Cinzel_Decorative } from "next/font/google";
 import { Metadata } from "next";
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>
