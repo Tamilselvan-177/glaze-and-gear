@@ -148,8 +148,16 @@ export default function CartPage() {
   const finalTotal = total - discountAmount;
 
   const updateQuantity = async (index: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
     const item = cart[index];
+    
+    // Validate bounds (min 1, max available stock)
+    if (newQuantity < 1) return;
+    if (newQuantity > item.product.stock) {
+      setCheckoutError(`Only ${item.product.stock} items available in stock for ${item.product.name}.`);
+      return;
+    }
+    
+    setCheckoutError(null);
     const newCart = [...cart];
     newCart[index].quantity = newQuantity;
     setCart(newCart);

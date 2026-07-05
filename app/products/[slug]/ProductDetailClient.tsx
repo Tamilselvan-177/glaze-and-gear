@@ -7,6 +7,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   const { data: session, status } = useSession();
   const [product, setProduct] = useState<any>(null);
   const [inWishlist, setInWishlist] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 })
+        body: JSON.stringify({ productId: product.id, quantity })
       });
       window.dispatchEvent(new Event('cartUpdated'));
       alert('Product added to cart!');
@@ -70,7 +71,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, quantity: 1 })
+        body: JSON.stringify({ productId: product.id, quantity })
       });
       window.dispatchEvent(new Event('cartUpdated'));
       router.push("/cart");
@@ -176,14 +177,50 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             <span className="text-gray-600 font-bold">{averageRating}</span>
             <span className="text-gray-400 text-sm">({product.reviews?.length || 0} reviews)</span>
           </div>
-          <p className="text-3xl font-extrabold text-[#D09399] mb-8">₹{product.price.toLocaleString('en-IN')}</p>
+          <p className="text-3xl font-extrabold text-[#D09399] mb-4">₹{product.price.toLocaleString('en-IN')}</p>
+          
+          {product.stock === 0 ? (
+            <div className="inline-block px-4 py-2 bg-red-100 text-red-800 font-bold uppercase tracking-widest text-xs rounded-full mb-6 border border-red-200">
+              Out of Stock
+            </div>
+          ) : (
+            <div className="inline-block px-4 py-2 bg-green-100 text-green-800 font-bold uppercase tracking-widest text-xs rounded-full mb-6 border border-green-200">
+              In Stock ({product.stock} available)
+            </div>
+          )}
+
           <p className="text-lg opacity-90 mb-8 text-[#98202E] leading-relaxed">{product.description}</p>
           
+          <div className="mb-8">
+            <p className="text-sm font-bold uppercase tracking-widest text-[#98202E] mb-3">Quantity</p>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={product.stock === 0}
+                className="w-10 h-10 rounded-full border-2 border-[#98202E] flex items-center justify-center text-[#98202E] font-bold text-xl hover:bg-[#98202E]/5 disabled:opacity-50"
+              >-</button>
+              <span className="font-bold text-xl w-8 text-center">{quantity}</span>
+              <button 
+                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                disabled={product.stock === 0 || quantity >= product.stock}
+                className="w-10 h-10 rounded-full border-2 border-[#98202E] flex items-center justify-center text-[#98202E] font-bold text-xl hover:bg-[#98202E]/5 disabled:opacity-50"
+              >+</button>
+            </div>
+          </div>
+          
           <div className="flex flex-wrap gap-4">
-            <button onClick={buyNow} className="flex-1 min-w-[200px] py-4 px-8 bg-[#98202E] text-white font-bold text-sm uppercase tracking-widest rounded hover:opacity-80 hover:-translate-y-1 transition-all">
+            <button 
+              onClick={buyNow} 
+              disabled={product.stock === 0}
+              className="flex-1 min-w-[200px] py-4 px-8 bg-[#98202E] text-white font-bold text-sm uppercase tracking-widest rounded hover:opacity-80 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            >
               Buy Now
             </button>
-            <button onClick={addToCart} className="flex-1 min-w-[200px] py-4 px-8 bg-transparent border-2 border-[#98202E] text-[#98202E] font-bold text-sm uppercase tracking-widest rounded hover:opacity-80 hover:-translate-y-1 transition-all">
+            <button 
+              onClick={addToCart} 
+              disabled={product.stock === 0}
+              className="flex-1 min-w-[200px] py-4 px-8 bg-transparent border-2 border-[#98202E] text-[#98202E] font-bold text-sm uppercase tracking-widest rounded hover:opacity-80 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-transparent"
+            >
               Add to Cart
             </button>
           </div>
