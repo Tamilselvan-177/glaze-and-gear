@@ -289,10 +289,10 @@ export default function FloatingChatbot() {
       {isDarkPage ? (
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#98202E] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-[9000] overflow-hidden border-2 border-white ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
+          className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-[0_8px_30px_rgb(0,255,255,0.15)] flex items-center justify-center hover:scale-110 transition-transform z-[9000] bg-white border border-gray-200 ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
           aria-label="Chat with us"
         >
-          <img src="/g_g_logo_bg-removebg-preview.png" alt="Chat" className="w-full h-full object-cover invert brightness-0" />
+          <img src="/g_g_logo_bg-removebg-preview.png" alt="Chat" className="w-full h-full object-contain drop-shadow-xl p-1 invert" />
         </button>
       ) : (
         <button 
