@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const rateLimit = await checkRateLimit(`promo_${ip}`, 10, 15); // Max 10 attempts per 15 mins
+    
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Too many promo code attempts. Please try again later." }, { status: 429 });
+    }
+
     const { code, cartTotal, userEmail } = await req.json();
 
     if (!code) {

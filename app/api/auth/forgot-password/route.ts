@@ -2,10 +2,26 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { getForgotPasswordTemplate } from "@/lib/email-templates";
+import { forgotPasswordSchema } from "@/lib/validations";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const rateLimit = await checkRateLimit(`forgot_${ip}`, 3, 15); // Max 3 requests per 15 minutes
+    
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const result = forgotPasswordSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+    }
+    
+    const { email } = result.data;
     const user = await prisma.user.findUnique({ where: { email } });
     
     // Always return success even if user doesn't exist to prevent email enumeration

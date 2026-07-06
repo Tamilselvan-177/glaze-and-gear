@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
+import { reviewSchema } from '@/lib/validations';
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -10,10 +12,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { productId, rating, comment } = await req.json();
+    const body = await req.json();
+    const result = reviewSchema.safeParse(body);
+    
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+    }
 
-    if (!productId || !rating) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const { productId, rating, comment } = result.data;
+
+    // Check if user purchased the product
+    const hasPurchased = await prisma.orderItem.findFirst({
+      where: {
+        productId: productId,
+        order: {
+          userId: session.user.id,
+          status: 'DELIVERED'
+        }
+      }
+    });
+
+    if (!hasPurchased) {
+      return NextResponse.json({ error: 'You can only review products you have purchased and received' }, { status: 403 });
     }
 
     // Check if user already reviewed this product

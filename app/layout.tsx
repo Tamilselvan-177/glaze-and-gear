@@ -38,10 +38,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${montserrat.variable} ${cinzelDecorative.variable} font-sans bg-[#F9EAEA]/30 text-[#0a0a0a]`}>
         <Providers>
-          <Navbar />
+          <div className="print:hidden">
+            <Navbar />
+          </div>
           {children}
-          <Footer />
-          <FloatingChatbot />
+          <div className="print:hidden">
+            <Footer />
+            <FloatingChatbot />
+          </div>
         </Providers>
       </body>
     </html>

@@ -14,6 +14,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const order = await prisma.order.findUnique({
       where: { id },
+      include: { items: true }
     });
 
     if (!order || order.userId !== session.user.id) {
@@ -24,10 +25,24 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Only pending orders can be cancelled' }, { status: 400 });
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: { status: 'CANCELLED' }
-    });
+    // Cancel order and restore stock in a transaction
+    const isPaidRazorpay = order.paymentMethod !== 'COD' && order.paymentStatus === 'PAID';
+    
+    const [updatedOrder] = await prisma.$transaction([
+      prisma.order.update({
+        where: { id },
+        data: { 
+          status: 'CANCELLED',
+          refundStatus: isPaidRazorpay ? 'PENDING' : undefined
+        }
+      }),
+      ...order.items.map(item => 
+        prisma.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } }
+        })
+      )
+    ]);
 
     return NextResponse.json(updatedOrder);
   } catch (error) {

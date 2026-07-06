@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { registerSchema } from "@/lib/validations";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json();
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const rateLimit = await checkRateLimit(`register_${ip}`, 5, 15);
+    
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Too many registration attempts. Please try again later." }, { status: 429 });
     }
+
+    const body = await request.json();
+    const result = registerSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+    }
+
+    const { name, email, password } = result.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email }

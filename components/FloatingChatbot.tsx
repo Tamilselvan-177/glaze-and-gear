@@ -283,6 +283,9 @@ export default function FloatingChatbot() {
     }
   };
 
+  const isAdminPage = pathname?.startsWith('/admin');
+  if (isAdminPage) return null;
+
   return (
     <>
       {/* Floating Button */}

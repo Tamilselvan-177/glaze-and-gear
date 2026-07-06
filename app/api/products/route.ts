@@ -10,14 +10,22 @@ export async function GET(request: Request) {
     const isFeatured = searchParams.get('isFeatured');
     const maxPrice = searchParams.get('maxPrice');
 
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === 'ADMIN';
+
     const products = await prisma.product.findMany({
       where: {
         ...(category ? { category: { equals: category, mode: 'insensitive' } } : {}),
         ...(isFeatured === 'true' ? { isFeatured: true } : {}),
         ...(maxPrice ? { price: { lte: parseFloat(maxPrice) } } : {}),
+        ...(!isAdmin ? { isArchived: false } : {}), // Hide archived products from public
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    if (!isAdmin) {
+      products.forEach((p: any) => delete p.costPrice);
+    }
 
     return NextResponse.json(products);
   } catch (error) {
@@ -60,6 +68,15 @@ export async function POST(request: Request) {
         stock: stock ? parseInt(stock) : 0,
         isFeatured: isFeatured === true || isFeatured === 'true',
       },
+    });
+
+    await prisma.adminAuditLog.create({
+      data: {
+        adminId: session.user.id,
+        action: "CREATE_PRODUCT",
+        targetId: product.id,
+        details: `Created product ${product.name}`
+      }
     });
 
     return NextResponse.json(product, { status: 201 });

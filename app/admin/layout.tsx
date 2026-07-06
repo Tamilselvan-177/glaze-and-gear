@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-[3000] flex bg-[#f4f4f5] text-gray-900 font-sans">
+    <div className="fixed inset-0 z-[3000] flex bg-[#f4f4f5] text-gray-900 font-sans print:static print:block print:bg-white">
       {/* Mobile overlay */}
       {isSidebarOpen && (
         <div 
@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Modern Sidebar */}
-      <aside className={`fixed md:relative z-50 h-full w-[280px] bg-[#0a0a0a] text-white flex flex-col shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      <aside className={`fixed md:relative z-50 h-full w-[280px] bg-[#0a0a0a] text-white flex flex-col shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out print:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         {/* Subtle decorative gradient */}
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#98202E]/40 to-transparent pointer-events-none" />
         
@@ -85,9 +85,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f4f4f5]">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f4f4f5] print:h-auto print:overflow-visible print:bg-white print:block">
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center p-4 bg-white border-b border-gray-200">
+        <div className="md:hidden flex items-center p-4 bg-white border-b border-gray-200 print:hidden">
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 rounded-lg bg-gray-100 text-gray-900 focus:outline-none"
@@ -99,7 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <h1 className="ml-4 font-serif font-black tracking-widest uppercase">Admin</h1>
         </div>
 
-        <div className="flex-1 p-6 md:p-12 overflow-y-auto">
+        <div className="flex-1 p-6 md:p-12 overflow-y-auto print:overflow-visible print:p-0">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

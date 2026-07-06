@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -20,8 +22,16 @@ export async function GET(
       }
     });
 
-    if (!product) {
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === 'ADMIN';
+
+    if (!product || product.isArchived) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    if (!isAdmin) {
+      // Hide costPrice from regular users/guests
+      delete (product as any).costPrice;
     }
 
     return NextResponse.json(product);
@@ -54,6 +64,18 @@ export async function PUT(
       },
     });
 
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      await prisma.adminAuditLog.create({
+        data: {
+          adminId: session.user.id,
+          action: "UPDATE_PRODUCT",
+          targetId: id,
+          details: `Updated product ${name || id}`
+        }
+      });
+    }
+
     return NextResponse.json(product);
   } catch (error) {
     console.error('Failed to update product:', error);
@@ -67,9 +89,22 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.product.delete({
+    await prisma.product.update({
       where: { id },
+      data: { isArchived: true }
     });
+
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      await prisma.adminAuditLog.create({
+        data: {
+          adminId: session.user.id,
+          action: "ARCHIVE_PRODUCT",
+          targetId: id,
+          details: `Soft deleted product ${id}`
+        }
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

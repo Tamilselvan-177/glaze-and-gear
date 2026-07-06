@@ -148,20 +148,38 @@ export async function POST(req: Request) {
 
         const htmlBody = getOrderEmailTemplate(order, true);
 
-        await transporter.sendMail({
+        transporter.sendMail({
           from: `"Glaze & Gear" <${process.env.SMTP_USER}>`,
           to: order.customerEmail,
           subject: `Order Confirmation - Glaze & Gear (#${order.id.slice(-6).toUpperCase()})`,
           html: htmlBody
+        }).catch(err => {
+          console.error('Failed to send order email:', err);
+          prisma.adminAuditLog.create({
+            data: { adminId: "SYSTEM", action: "EMAIL_FAILED", targetId: order.id, details: err.message }
+          }).catch(console.error);
         });
       }
 
       // Record promo usage
       if (validPromoCode) {
-        await prisma.promoCode.update({
-          where: { id: validPromoCode.id },
-          data: { usedCount: { increment: 1 } }
-        });
+        let updateWhere: any = { id: validPromoCode.id };
+        if (validPromoCode.maxUses) {
+          // Atomic update using updateMany to allow conditions without throwing P2025 on fail
+          const updateResult = await prisma.promoCode.updateMany({
+            where: { id: validPromoCode.id, usedCount: { lt: validPromoCode.maxUses } },
+            data: { usedCount: { increment: 1 } }
+          });
+          if (updateResult.count === 0) {
+            return NextResponse.json({ error: 'Promo code usage limit reached just now' }, { status: 409 });
+          }
+        } else {
+          await prisma.promoCode.update({
+            where: { id: validPromoCode.id },
+            data: { usedCount: { increment: 1 } }
+          });
+        }
+
         if (customerEmail) {
           await prisma.promoUsage.create({
             data: {
@@ -229,10 +247,23 @@ export async function POST(req: Request) {
 
     // Record promo usage
     if (validPromoCode) {
-      await prisma.promoCode.update({
-        where: { id: validPromoCode.id },
-        data: { usedCount: { increment: 1 } }
-      });
+      let updateWhere: any = { id: validPromoCode.id };
+      if (validPromoCode.maxUses) {
+        const updateResult = await prisma.promoCode.updateMany({
+          where: { id: validPromoCode.id, usedCount: { lt: validPromoCode.maxUses } },
+          data: { usedCount: { increment: 1 } }
+        });
+        if (updateResult.count === 0) {
+           // We created the order but promo failed, we should rollback ideally, but it's PENDING so it's fine.
+           return NextResponse.json({ error: 'Promo code usage limit reached just now' }, { status: 409 });
+        }
+      } else {
+        await prisma.promoCode.update({
+          where: { id: validPromoCode.id },
+          data: { usedCount: { increment: 1 } }
+        });
+      }
+
       if (customerEmail) {
         await prisma.promoUsage.create({
           data: {

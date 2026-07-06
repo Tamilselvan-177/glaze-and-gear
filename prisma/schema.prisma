@@ -102,6 +102,7 @@ model Product {
   stock       Int         @default(0)
   lowStockThreshold Int   @default(5)
   isFeatured  Boolean     @default(false)
+  isArchived  Boolean     @default(false)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   orderItems    OrderItem[]
@@ -135,6 +136,7 @@ model Order {
   razorpayPaymentId String?
   razorpaySignature String?
   paymentStatus     String      @default("PENDING")
+  refundStatus      String?     // e.g. PENDING, COMPLETED
   trackingNumber    String?
   promoCode         String?
   discountAmount    Float?
@@ -233,4 +235,22 @@ model Complaint {
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model AdminAuditLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  adminId   String   @db.ObjectId
+  action    String
+  targetId  String?
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model RateLimit {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String   @unique // e.g. "register_192.168.1.1" or "promo_user@email.com"
+  count      Int      @default(1)
+  resetAt    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

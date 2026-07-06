@@ -21,11 +21,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
+    // Re-check stock to see if it sold out while payment was pending
+    const dbOrder = await prisma.order.findUnique({
+      where: { id: dbOrderId },
+      include: { items: { include: { product: true } } }
+    });
+    
+    if (!dbOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+    let outOfStock = false;
+    for (const item of dbOrder.items) {
+      if (item.product.stock < item.quantity) outOfStock = true;
+    }
+
     // Mark as PAID
     const order = await prisma.order.update({
       where: { id: dbOrderId },
       data: {
         paymentStatus: "PAID",
+        status: outOfStock ? "REQUIRES_ATTENTION" : "PENDING",
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
       },
@@ -48,6 +62,17 @@ export async function POST(req: Request) {
       });
     }
 
+    if (outOfStock) {
+      await prisma.adminAuditLog.create({
+        data: {
+          adminId: "SYSTEM",
+          action: "OVERSOLD_ORDER",
+          targetId: order.id,
+          details: "Order was paid but items were out of stock. Stock went negative."
+        }
+      });
+    }
+
     // Send Order Confirmation Email
     if (order.customerEmail && process.env.SMTP_HOST && !process.env.SMTP_HOST.includes("your_email")) {
       const transporter = nodemailer.createTransport({
@@ -62,11 +87,16 @@ export async function POST(req: Request) {
 
       const htmlBody = getOrderEmailTemplate(order, false);
 
-      await transporter.sendMail({
+      transporter.sendMail({
         from: `"Glaze & Gear" <${process.env.SMTP_USER}>`,
         to: order.customerEmail,
         subject: `Order Confirmation - Glaze & Gear (#${order.id.slice(-6).toUpperCase()})`,
         html: htmlBody
+      }).catch(err => {
+        console.error('Failed to send order email:', err);
+        prisma.adminAuditLog.create({
+          data: { adminId: "SYSTEM", action: "EMAIL_FAILED", targetId: order.id, details: err.message }
+        }).catch(console.error);
       });
       console.log(`[ORDER CONFIRMATION SENT TO] ${order.customerEmail}`);
     } else {
