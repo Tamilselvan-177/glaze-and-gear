@@ -21,12 +21,11 @@ export default function DiscoverPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [prodRes, wishRes] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/wishlist')
-        ]);
+        // Fetch separately so one failing doesn't break the other
+        const prodRes = await fetch('/api/products').catch(e => null);
+        const wishRes = await fetch('/api/wishlist').catch(e => null);
         
-        if (prodRes.ok) {
+        if (prodRes && prodRes.ok) {
           const data = await prodRes.json();
           const activeProducts = data.filter((p: any) => !p.isArchived);
           setProducts(activeProducts);
@@ -34,7 +33,7 @@ export default function DiscoverPage() {
           setCategories(cats);
         }
         
-        if (wishRes.ok) {
+        if (wishRes && wishRes.ok) {
           const wishData = await wishRes.json();
           if (Array.isArray(wishData)) {
             setWishlist(new Set(wishData.map((w: any) => w.productId)));
@@ -67,14 +66,17 @@ export default function DiscoverPage() {
 
   const handleSwipe = (direction: 'left' | 'right', productId: string) => {
     if (direction === 'right') {
-      // Swiped right means Liked/Wishlisted
-      toggleWishlist(productId);
+      // Swiped right strictly means ADD to wishlist
+      toggleWishlist(productId, true);
     }
     setCurrentIndex(prev => prev + 1);
   };
 
-  const toggleWishlist = async (productId: string) => {
-    const isAdding = !wishlist.has(productId);
+  const toggleWishlist = async (productId: string, forceAdd?: boolean) => {
+    const isAdding = forceAdd !== undefined ? forceAdd : !wishlist.has(productId);
+    
+    // If we are forcing add but it's already there, do nothing
+    if (forceAdd && wishlist.has(productId)) return;
     
     // Optimistic UI update
     setWishlist(prev => {
@@ -85,16 +87,23 @@ export default function DiscoverPage() {
     });
 
     try {
+      let res;
       if (isAdding) {
-        await fetch('/api/wishlist', {
+        res = await fetch('/api/wishlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ productId })
         });
       } else {
-        await fetch(`/api/wishlist?productId=${productId}`, {
+        res = await fetch(`/api/wishlist?productId=${productId}`, {
           method: 'DELETE'
         });
+      }
+
+      if (res.status === 401) {
+        // User explicitly wants no error message and no UI reversion.
+        // Let logged out users play with the UI seamlessly.
+        return;
       }
       // Tell navbar to update its counter
       window.dispatchEvent(new Event('wishlistUpdated'));

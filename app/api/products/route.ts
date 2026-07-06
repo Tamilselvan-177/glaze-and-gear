@@ -13,17 +13,18 @@ export async function GET(request: Request) {
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.role === 'ADMIN';
 
-    const products = await prisma.product.findMany({
+    let products = await prisma.product.findMany({
       where: {
         ...(category ? { category: { equals: category, mode: 'insensitive' } } : {}),
         ...(isFeatured === 'true' ? { isFeatured: true } : {}),
         ...(maxPrice ? { price: { lte: parseFloat(maxPrice) } } : {}),
-        ...(!isAdmin ? { isArchived: false } : {}), // Hide archived products from public
       },
       orderBy: { createdAt: 'desc' },
     });
 
     if (!isAdmin) {
+      // Filter in JS to safely handle MongoDB missing boolean fields
+      products = products.filter((p: any) => p.isArchived !== true);
       products.forEach((p: any) => delete p.costPrice);
     }
 
