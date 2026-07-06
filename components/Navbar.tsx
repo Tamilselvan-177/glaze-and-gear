@@ -95,7 +95,6 @@ export default function Navbar() {
         <nav className="hidden lg:flex items-center gap-6">
           <Link href="/#shop" className="font-bold text-sm uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-current after:transition-all after:duration-500 hover:after:w-full">Glaze</Link>
           <Link href="/gears" className="font-bold text-sm uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-current after:transition-all after:duration-500 hover:after:w-full">Gears</Link>
-          <Link href="/discover" className="font-bold text-sm uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-current after:transition-all after:duration-500 hover:after:w-full">Discover</Link>
           <Link href="/products" className="font-bold text-sm uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-current after:transition-all after:duration-500 hover:after:w-full">All Products</Link>
           <Link href="/about" className="font-bold text-sm uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-current after:transition-all after:duration-500 hover:after:w-full">About</Link>
           
@@ -153,7 +152,6 @@ export default function Navbar() {
       >
         <Link href="/#shop" onClick={() => setMenuOpen(false)} className="text-white text-3xl font-serif font-bold tracking-widest hover:scale-110 hover:opacity-70 transition-all">Glaze</Link>
         <Link href="/gears" onClick={() => setMenuOpen(false)} className="text-white text-3xl font-serif font-bold tracking-widest hover:scale-110 hover:opacity-70 transition-all">Gears</Link>
-        <Link href="/discover" onClick={() => setMenuOpen(false)} className="text-white text-3xl font-serif font-bold tracking-widest hover:scale-110 hover:opacity-70 transition-all">Discover</Link>
         <Link href="/products" onClick={() => setMenuOpen(false)} className="text-white text-3xl font-serif font-bold tracking-widest hover:scale-110 hover:opacity-70 transition-all">All Products</Link>
         
         {session ? (
