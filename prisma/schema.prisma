@@ -29,6 +29,7 @@ model User {
   wishlistItems WishlistItem[]
   reviews       Review[]
   addresses     Address[]
+  complaints    Complaint[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -96,9 +97,10 @@ model Product {
   description String?
   price       Float
   image       String?
-  category    String?
+  category    String
   costPrice   Float       @default(0)
   stock       Int         @default(0)
+  lowStockThreshold Int   @default(5)
   isFeatured  Boolean     @default(false)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -106,6 +108,7 @@ model Product {
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   reviews       Review[]
+  complaints    Complaint[]
 }
 
 model Order {
@@ -124,6 +127,7 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   items           OrderItem[]
+  complaints      Complaint[]
 
   // Payment Tracking
   paymentMethod     String      @default("RAZORPAY")
@@ -131,6 +135,9 @@ model Order {
   razorpayPaymentId String?
   razorpaySignature String?
   paymentStatus     String      @default("PENDING")
+  trackingNumber    String?
+  promoCode         String?
+  discountAmount    Float?
 }
 
 model OrderItem {
@@ -183,10 +190,47 @@ model Review {
 }
 
 model PromoCode {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  code            String   @unique
-  discountPercent Int
-  isActive        Boolean  @default(true)
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  code              String   @unique
+  discountType      String   @default("PERCENTAGE") // "PERCENTAGE" or "FLAT"
+  discountPercent   Int?
+  flatDiscountAmount Float?
+  isActive          Boolean  @default(true)
+  expiresAt       DateTime?
+  maxUses         Int?
+  usedCount       Int      @default(0)
+  minOrderValue   Float?
+  maxDiscountAmount Float?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model PromoUsage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
+  email     String?
+  promoCode String
+  orderId   String
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Complaint {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId     String   @db.ObjectId
+  productId   String   @db.ObjectId
+  userId      String?  @db.ObjectId
+  description String
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

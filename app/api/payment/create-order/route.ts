@@ -13,15 +13,53 @@ export async function POST(req: Request) {
     const isCod = paymentMethod === "COD";
 
     let finalAmount = amount;
+    let actualDiscountAmount = 0;
+    let validPromoCode: any = null;
+    const customerEmail = customerInfo?.email || "";
 
     if (promoCode) {
       const promo = await prisma.promoCode.findUnique({
         where: { code: promoCode.toUpperCase() }
       });
-      if (promo && promo.isActive) {
-        const discountAmount = (amount * promo.discountPercent) / 100;
-        finalAmount = amount - discountAmount;
+      if (!promo || !promo.isActive) {
+         return NextResponse.json({ error: 'Invalid or inactive promo code' }, { status: 400 });
       }
+      if (promo.expiresAt && new Date() > promo.expiresAt) {
+         return NextResponse.json({ error: 'Promo code has expired' }, { status: 400 });
+      }
+      if (promo.maxUses && promo.usedCount >= promo.maxUses) {
+         return NextResponse.json({ error: 'Promo code usage limit reached' }, { status: 400 });
+      }
+      if (promo.minOrderValue && amount < promo.minOrderValue) {
+         return NextResponse.json({ error: `Minimum order value of ₹${promo.minOrderValue} required` }, { status: 400 });
+      }
+
+      // Check per-user limit if email is provided
+      if (customerEmail) {
+        const pastUsage = await prisma.promoUsage.count({
+          where: {
+            promoCode: promo.code,
+            email: customerEmail
+          }
+        });
+        if (pastUsage > 0) {
+          return NextResponse.json({ error: 'You have already used this promo code' }, { status: 400 });
+        }
+      }
+
+      let calculatedDiscount = 0;
+      if (promo.discountType === 'FLAT' && promo.flatDiscountAmount) {
+        calculatedDiscount = promo.flatDiscountAmount;
+      } else if (promo.discountType === 'PERCENTAGE' && promo.discountPercent) {
+        calculatedDiscount = (amount * promo.discountPercent) / 100;
+        if (promo.maxDiscountAmount && calculatedDiscount > promo.maxDiscountAmount) {
+          calculatedDiscount = promo.maxDiscountAmount;
+        }
+      }
+      
+      actualDiscountAmount = calculatedDiscount;
+      finalAmount = amount - actualDiscountAmount;
+      validPromoCode = promo;
     }
 
     const session = await getServerSession(authOptions);
@@ -66,6 +104,8 @@ export async function POST(req: Request) {
           paymentMethod: "COD",
           paymentStatus: "PENDING",
           status: "PENDING",
+          promoCode: validPromoCode ? validPromoCode.code : null,
+          discountAmount: actualDiscountAmount > 0 ? actualDiscountAmount : null,
           items: {
             create: items.map((item: any) => ({
               productId: item.id,
@@ -116,6 +156,24 @@ export async function POST(req: Request) {
         });
       }
 
+      // Record promo usage
+      if (validPromoCode) {
+        await prisma.promoCode.update({
+          where: { id: validPromoCode.id },
+          data: { usedCount: { increment: 1 } }
+        });
+        if (customerEmail) {
+          await prisma.promoUsage.create({
+            data: {
+              userId: session?.user?.id || undefined,
+              email: customerEmail,
+              promoCode: validPromoCode.code,
+              orderId: order.id,
+            }
+          });
+        }
+      }
+
       return NextResponse.json({
         success: true,
         isCod: true,
@@ -124,13 +182,16 @@ export async function POST(req: Request) {
     }
 
     // Razorpay Flow
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
+    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+    
+    if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error("Razorpay credentials missing in .env");
     }
 
     const instance = new Razorpay({
-      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
+      key_id: razorpayKeyId,
+      key_secret: razorpayKeySecret,
     });
 
     const options = {
@@ -153,6 +214,8 @@ export async function POST(req: Request) {
         razorpayOrderId: razorpayOrder.id,
         paymentStatus: "PENDING",
         status: "PENDING",
+        promoCode: validPromoCode ? validPromoCode.code : null,
+        discountAmount: actualDiscountAmount > 0 ? actualDiscountAmount : null,
         items: {
           create: items.map((item: any) => ({
             productId: item.id,
@@ -163,6 +226,24 @@ export async function POST(req: Request) {
         },
       },
     });
+
+    // Record promo usage
+    if (validPromoCode) {
+      await prisma.promoCode.update({
+        where: { id: validPromoCode.id },
+        data: { usedCount: { increment: 1 } }
+      });
+      if (customerEmail) {
+        await prisma.promoUsage.create({
+          data: {
+            userId: session?.user?.id || undefined,
+            email: customerEmail,
+            promoCode: validPromoCode.code,
+            orderId: order.id,
+          }
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

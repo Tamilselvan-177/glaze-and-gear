@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Providers } from "@/components/Providers";
+import FloatingChatbot from "@/components/FloatingChatbot";
 import { Montserrat, Cinzel_Decorative } from "next/font/google";
 import { Metadata } from "next";
 
@@ -40,6 +41,7 @@ export default function RootLayout({
           <Navbar />
           {children}
           <Footer />
+          <FloatingChatbot />
         </Providers>
       </body>
     </html>

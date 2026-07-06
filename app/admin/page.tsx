@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import DashboardCharts from '@/components/DashboardCharts';
 
 export default async function AdminDashboard() {
   const totalProducts = await prisma.product.count();
@@ -58,6 +59,62 @@ export default async function AdminDashboard() {
     include: { user: true, items: true }
   });
 
+  // --- NEW: Dashboard Analytics Data ---
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const recentOrdersForChart = await prisma.order.findMany({
+    where: { createdAt: { gte: sevenDaysAgo }, status: { not: 'CANCELLED' } },
+    select: { createdAt: true, totalAmount: true }
+  });
+
+  const revenueByDate: Record<string, number> = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    revenueByDate[d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })] = 0;
+  }
+
+  recentOrdersForChart.forEach(order => {
+    const dateStr = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (revenueByDate[dateStr] !== undefined) {
+      revenueByDate[dateStr] += order.totalAmount;
+    }
+  });
+
+  const revenueData = Object.keys(revenueByDate).map(date => ({
+    date,
+    revenue: revenueByDate[date]
+  }));
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentOrderItems = await prisma.orderItem.findMany({
+    where: { order: { createdAt: { gte: thirtyDaysAgo }, status: { not: 'CANCELLED' } } },
+    include: { product: true }
+  });
+
+  const productStats: Record<string, { id: string, name: string, revenue: number, sales: number }> = {};
+  recentOrderItems.forEach(item => {
+    if (!productStats[item.productId]) {
+      productStats[item.productId] = {
+        id: item.productId,
+        name: item.product.name,
+        revenue: 0,
+        sales: 0
+      };
+    }
+    productStats[item.productId].sales += item.quantity;
+    productStats[item.productId].revenue += (item.quantity * item.price);
+  });
+
+  const topProducts = Object.values(productStats)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+  // -------------------------------------
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="mb-10 flex justify-between items-end">
@@ -115,7 +172,11 @@ export default async function AdminDashboard() {
             <Link href="/admin/products" className="text-gray-400 hover:text-gray-900 transition-colors">→</Link>
           </div>
         </div>
+      </div>
+      
+      <DashboardCharts revenueData={revenueData} topProducts={topProducts} />
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Recent Orders Table (Spans 3 cols) */}
         <div className="md:col-span-3 bg-white rounded-3xl p-8 shadow-sm border border-gray-200/60">
           <div className="flex justify-between items-center mb-6">

@@ -2,14 +2,38 @@ import Link from "next/link";
 
 import prisma from '@/lib/prisma';
 import ProductCard from '@/components/ProductCard';
+import NewsletterForm from '@/components/NewsletterForm';
+import RunningReviews from '@/components/RunningReviews';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const shopProducts = await prisma.product.findMany({
+    where: {
+      category: {
+        equals: 'glaze',
+        mode: 'insensitive'
+      },
+      isFeatured: true
+    },
     take: 3,
     orderBy: { createdAt: 'desc' }
   });
+
+  const rawReviews = await prisma.review.findMany({
+    where: { rating: { gte: 4 } }, // Show positive reviews on homepage
+    include: { user: true, product: true },
+    orderBy: { createdAt: 'desc' },
+    take: 10
+  });
+
+  const initialReviews = rawReviews.map(r => ({
+    id: r.id,
+    rating: r.rating,
+    comment: r.comment || '',
+    userName: r.user?.name || 'Anonymous',
+    productName: r.product?.name
+  }));
 
   return (
     <div className="bg-white min-h-screen text-[#98202E]">
@@ -35,6 +59,7 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
 
       {/* Men's Gear Section */}
       <section id="mens-gear" className="py-[8vh] px-[5%] bg-[#0a0a0a] text-white relative overflow-hidden">
@@ -107,10 +132,11 @@ export default async function HomePage() {
           "Unwrap the magic of artisanal craft."
         </div>
         <div className="text-xs md:text-sm uppercase tracking-[4px] md:tracking-[6px] opacity-70 mb-8 md:mb-12">Join the Circle</div>
-        <div className="w-full max-w-[500px]">
-          <input type="email" placeholder="YOUR EMAIL ADDRESS" className="w-full p-4 md:p-6 border-b-2 border-[#98202E] font-sans text-sm md:text-base text-center outline-none bg-transparent placeholder:text-[#98202E]/50" />
-        </div>
+        <NewsletterForm />
       </section>
+
+      {/* Running Reviews Marquee */}
+      <RunningReviews initialReviews={initialReviews} />
     </div>
   );
 }

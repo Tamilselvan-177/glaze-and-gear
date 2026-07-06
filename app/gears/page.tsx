@@ -6,7 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function GearsPage() {
   const gears = await prisma.product.findMany({
-    where: { category: 'gears' }
+    where: { 
+      category: {
+        equals: 'gears',
+        mode: 'insensitive'
+      },
+      isFeatured: true
+    }
   });
 
   return (

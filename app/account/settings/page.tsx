@@ -24,6 +24,14 @@ export default function AccountSettingsPage() {
     name: "", phone: "", street: "", city: "", state: "", zip: "", isDefault: false
   });
 
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+
   const fetchProfileAndAddresses = () => {
     Promise.all([
       fetch("/api/user/profile").then(res => res.json()),
@@ -111,6 +119,40 @@ export default function AccountSettingsPage() {
       }
     } catch (err) {
       alert("Failed to delete.");
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordMessage("New passwords do not match.");
+      return;
+    }
+    
+    setPasswordSaving(true);
+    setPasswordMessage("");
+    
+    try {
+      const res = await fetch("/api/user/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordMessage("success: Password updated successfully!");
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        setPasswordMessage(data.error || "Failed to update password.");
+      }
+    } catch (err) {
+      setPasswordMessage("An error occurred.");
+    } finally {
+      setPasswordSaving(false);
     }
   };
 
@@ -240,6 +282,59 @@ export default function AccountSettingsPage() {
               <p className="text-gray-400 italic">No addresses saved yet.</p>
             )}
           </div>
+        </div>
+
+        {/* Change Password */}
+        <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-xl shadow-[#98202E]/5 border border-[#98202E]/10">
+          <h2 className="text-2xl font-serif text-[#98202E] mb-6">Security & Password</h2>
+          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-6 max-w-md">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 uppercase tracking-widest mb-2">Current Password</label>
+              <input 
+                type="password" 
+                required
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#98202E]"
+                value={passwordForm.currentPassword}
+                onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 uppercase tracking-widest mb-2">New Password</label>
+              <input 
+                type="password" 
+                required
+                minLength={6}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#98202E]"
+                value={passwordForm.newPassword}
+                onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 uppercase tracking-widest mb-2">Confirm New Password</label>
+              <input 
+                type="password" 
+                required
+                minLength={6}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#98202E]"
+                value={passwordForm.confirmPassword}
+                onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+              />
+            </div>
+
+            {passwordMessage && (
+              <div className={`p-4 rounded-xl text-sm font-bold ${passwordMessage.includes("success") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                {passwordMessage.replace("success: ", "")}
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={passwordSaving}
+              className="mt-4 bg-[#98202E] text-white px-8 py-4 rounded-xl font-bold tracking-widest uppercase hover:bg-[#7a1a25] transition-all disabled:opacity-50 inline-flex items-center justify-center self-start"
+            >
+              {passwordSaving ? "Updating..." : "Update Password"}
+            </button>
+          </form>
         </div>
 
       </div>

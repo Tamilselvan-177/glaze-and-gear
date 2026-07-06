@@ -29,17 +29,23 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { code, discountPercent, isActive } = body;
+    const { code, discountType, discountPercent, flatDiscountAmount, isActive, expiresAt, maxUses, minOrderValue, maxDiscountAmount } = body;
 
-    if (!code || discountPercent == null) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!code || (discountType === 'PERCENTAGE' && discountPercent == null) || (discountType === 'FLAT' && flatDiscountAmount == null)) {
+      return NextResponse.json({ error: 'Missing required fields for discount' }, { status: 400 });
     }
 
     const promo = await prisma.promoCode.create({
       data: {
         code: code.toUpperCase(),
-        discountPercent: Number(discountPercent),
-        isActive: isActive !== undefined ? isActive : true
+        discountType: discountType || 'PERCENTAGE',
+        discountPercent: discountType === 'PERCENTAGE' ? Number(discountPercent) : null,
+        flatDiscountAmount: discountType === 'FLAT' ? Number(flatDiscountAmount) : null,
+        isActive: isActive !== undefined ? isActive : true,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        maxUses: maxUses ? Number(maxUses) : null,
+        minOrderValue: minOrderValue ? Number(minOrderValue) : null,
+        maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null
       }
     });
 

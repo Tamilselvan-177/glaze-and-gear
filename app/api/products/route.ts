@@ -8,11 +8,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const isFeatured = searchParams.get('isFeatured');
+    const maxPrice = searchParams.get('maxPrice');
 
     const products = await prisma.product.findMany({
       where: {
-        ...(category ? { category } : {}),
+        ...(category ? { category: { equals: category, mode: 'insensitive' } } : {}),
         ...(isFeatured === 'true' ? { isFeatured: true } : {}),
+        ...(maxPrice ? { price: { lte: parseFloat(maxPrice) } } : {}),
       },
       orderBy: { createdAt: 'desc' },
     });

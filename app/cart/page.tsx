@@ -28,10 +28,13 @@ export default function CartPage() {
 
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const [discountType, setDiscountType] = useState<string | null>(null);
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [flatDiscountAmount, setFlatDiscountAmount] = useState<number | null>(null);
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [applyingPromo, setApplyingPromo] = useState(false);
+  const [maxDiscountAmount, setMaxDiscountAmount] = useState<number | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -119,13 +122,25 @@ export default function CartPage() {
       const res = await fetch('/api/promos/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: promoCodeInput })
+        body: JSON.stringify({ 
+          code: promoCodeInput,
+          cartTotal: total,
+          userEmail: session?.user?.email || "" 
+        })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setAppliedPromo(promoCodeInput.toUpperCase());
-        setDiscountPercent(data.discountPercent);
-        setPromoSuccess(`Applied ${data.discountPercent}% off!`);
+        setDiscountType(data.discountType);
+        setDiscountPercent(data.discountPercent || 0);
+        setFlatDiscountAmount(data.flatDiscountAmount || null);
+        setMaxDiscountAmount(data.maxDiscountAmount || null);
+        
+        if (data.discountType === 'FLAT' && data.flatDiscountAmount) {
+          setPromoSuccess(`Applied ₹${data.flatDiscountAmount} off!`);
+        } else {
+          setPromoSuccess(`Applied ${data.discountPercent}% off!`);
+        }
       } else {
         setPromoError(data.error || "Invalid promo code");
       }
@@ -138,13 +153,24 @@ export default function CartPage() {
 
   const removePromo = () => {
     setAppliedPromo(null);
+    setDiscountType(null);
     setDiscountPercent(0);
+    setFlatDiscountAmount(null);
+    setMaxDiscountAmount(null);
     setPromoCodeInput("");
     setPromoSuccess("");
     setPromoError("");
   };
 
-  const discountAmount = (total * discountPercent) / 100;
+  let discountAmount = 0;
+  if (discountType === 'FLAT' && flatDiscountAmount) {
+    discountAmount = flatDiscountAmount;
+  } else if (discountType === 'PERCENTAGE' && discountPercent) {
+    discountAmount = (total * discountPercent) / 100;
+    if (maxDiscountAmount && discountAmount > maxDiscountAmount) {
+      discountAmount = maxDiscountAmount;
+    }
+  }
   const finalTotal = total - discountAmount;
 
   const updateQuantity = async (index: number, newQuantity: number) => {
@@ -385,8 +411,8 @@ export default function CartPage() {
                 </div>
 
                 {appliedPromo && (
-                  <div className="flex justify-between items-center text-green-600 font-bold bg-green-50 p-3 rounded-lg mt-2">
-                    <span>Discount ({discountPercent}%)</span>
+                  <div className="flex justify-between items-center text-green-600 font-bold mb-4">
+                    <span>Discount ({discountType === 'FLAT' ? `₹${flatDiscountAmount} flat` : `${discountPercent}%`})</span>
                     <span>- ₹{discountAmount.toLocaleString()}</span>
                   </div>
                 )}

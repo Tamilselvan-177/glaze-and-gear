@@ -10,15 +10,19 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { status } = body;
+    const { status, trackingNumber } = body;
 
-    if (!status) {
-      return NextResponse.json({ error: 'Status is required' }, { status: 400 });
+    if (!status && trackingNumber === undefined) {
+      return NextResponse.json({ error: 'status or trackingNumber is required' }, { status: 400 });
     }
+
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (trackingNumber !== undefined) updateData.trackingNumber = trackingNumber;
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: updateData,
       include: {
         items: {
           include: { product: true }

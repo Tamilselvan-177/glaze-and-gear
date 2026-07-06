@@ -12,6 +12,8 @@ export default function AdminOrders() {
   const [dateFilter, setDateFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [trackingInput, setTrackingInput] = useState("");
+  const [savingTracking, setSavingTracking] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -48,6 +50,27 @@ export default function AdminOrders() {
 
   const openOrderDetails = (order: any) => {
     setSelectedOrder(order);
+    setTrackingInput(order.trackingNumber || "");
+  };
+
+  const saveTracking = async () => {
+    if (!selectedOrder) return;
+    setSavingTracking(true);
+    try {
+      const res = await fetch(`/api/orders/${selectedOrder.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackingNumber: trackingInput }),
+      });
+      if (!res.ok) throw new Error();
+      setOrders(orders.map((o: any) => o.id === selectedOrder.id ? { ...o, trackingNumber: trackingInput } : o));
+      setSelectedOrder({ ...selectedOrder, trackingNumber: trackingInput });
+      showToast("Tracking number saved!", "success");
+    } catch {
+      showToast("Failed to save tracking number", "error");
+    } finally {
+      setSavingTracking(false);
+    }
   };
 
   return (
@@ -267,7 +290,11 @@ export default function AdminOrders() {
             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <div>
                 <h2 className="text-2xl font-serif font-black tracking-tight text-gray-900">Order Details</h2>
-                <p className="text-gray-500 font-mono text-sm mt-1">#{selectedOrder.id}</p>
+                <div className="flex gap-2 items-center mt-1">
+                  <p className="text-gray-500 font-mono text-sm">#{selectedOrder.id}</p>
+                  <span className="text-gray-300">•</span>
+                  <p className="text-gray-500 text-sm">{new Date(selectedOrder.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                </div>
               </div>
               <div className="flex gap-3 items-center">
                 <a 
@@ -290,24 +317,87 @@ export default function AdminOrders() {
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-8">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* Customer Box */}
                 <div>
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Customer Information</h3>
-                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                    <p className="font-bold text-gray-900 text-lg">{selectedOrder.customerName || selectedOrder.user?.name || 'Anonymous'}</p>
-                    <p className="text-gray-600 mt-1">{selectedOrder.customerEmail || selectedOrder.user?.email || 'No email provided'}</p>
-                    {selectedOrder.customerPhone && <p className="text-gray-600 mt-1">📞 {selectedOrder.customerPhone}</p>}
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Customer</h3>
+                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 h-full">
+                    <p className="font-bold text-gray-900 text-lg line-clamp-1" title={selectedOrder.customerName || selectedOrder.user?.name || 'Anonymous'}>
+                      {selectedOrder.customerName || selectedOrder.user?.name || 'Anonymous'}
+                    </p>
+                    <p className="text-gray-600 mt-1 truncate" title={selectedOrder.customerEmail || selectedOrder.user?.email || 'No email provided'}>
+                      {selectedOrder.customerEmail || selectedOrder.user?.email || 'No email provided'}
+                    </p>
+                    {selectedOrder.customerPhone && <p className="text-gray-600 mt-1 truncate">📞 {selectedOrder.customerPhone}</p>}
                   </div>
                 </div>
 
+                {/* Shipping Box */}
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Shipping Address</h3>
                   <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 h-full">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm line-clamp-4" title={selectedOrder.shippingAddress || 'No shipping address provided.'}>
                       {selectedOrder.shippingAddress || 'No shipping address provided.'}
                     </p>
                   </div>
                 </div>
+                
+                {/* Payment Box */}
+                <div>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Payment Info</h3>
+                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 h-full flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
+                        selectedOrder.paymentMethod === 'COD' ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-100 text-indigo-800'
+                      }`}>
+                        {selectedOrder.paymentMethod || 'RAZORPAY'}
+                      </span>
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
+                        selectedOrder.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedOrder.paymentStatus || (selectedOrder.paymentMethod === 'COD' ? 'PENDING' : 'PAID')}
+                      </span>
+                    </div>
+
+                    {selectedOrder.paymentMethod !== 'COD' && selectedOrder.razorpayOrderId && (
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">RZP Order ID</p>
+                        <p className="text-xs font-mono text-gray-700 truncate" title={selectedOrder.razorpayOrderId}>{selectedOrder.razorpayOrderId}</p>
+                      </div>
+                    )}
+                    
+                    {selectedOrder.paymentMethod !== 'COD' && selectedOrder.razorpayPaymentId && (
+                      <div className="mt-1 pt-1">
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">RZP Payment ID</p>
+                        <p className="text-xs font-mono text-gray-700 truncate" title={selectedOrder.razorpayPaymentId}>{selectedOrder.razorpayPaymentId}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tracking Number */}
+              <div className="mb-8">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Shipment Tracking</h3>
+                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    placeholder="Enter tracking number (e.g. DTDC1234567890)"
+                    value={trackingInput}
+                    onChange={e => setTrackingInput(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#98202E]"
+                  />
+                  <button
+                    onClick={saveTracking}
+                    disabled={savingTracking}
+                    className="px-6 py-3 bg-[#98202E] text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#7a1a25] transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {savingTracking ? "Saving..." : "Save Tracking"}
+                  </button>
+                </div>
+                {selectedOrder.trackingNumber && (
+                  <p className="text-xs text-green-600 font-bold mt-2 ml-1">✓ Currently saved: {selectedOrder.trackingNumber}</p>
+                )}
               </div>
 
               <div>
@@ -343,10 +433,29 @@ export default function AdminOrders() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end items-center gap-6">
-              <div className="text-right">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Paid</p>
-                <p className="text-3xl font-black text-gray-900 tracking-tight">₹{selectedOrder.totalAmount.toLocaleString()}</p>
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end items-center">
+              <div className="w-full max-w-sm">
+                <div className="flex justify-between py-2 text-gray-600 text-sm">
+                  <span className="font-bold">Subtotal</span>
+                  <span>₹{selectedOrder.items?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toLocaleString()}</span>
+                </div>
+                
+                {selectedOrder.discountAmount > 0 && (
+                  <div className="flex justify-between py-2 text-green-600 text-sm">
+                    <span className="font-bold flex items-center gap-2">
+                      Discount 
+                      {selectedOrder.promoCode && <span className="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded uppercase">{selectedOrder.promoCode}</span>}
+                    </span>
+                    <span className="font-bold">-₹{selectedOrder.discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between py-3 mt-2 border-t border-gray-200">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center">
+                    {selectedOrder.paymentMethod === 'COD' && selectedOrder.paymentStatus !== 'PAID' ? 'Amount to Collect' : 'Total Paid'}
+                  </span>
+                  <span className="text-3xl font-black text-gray-900 tracking-tight">₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                </div>
               </div>
             </div>
 

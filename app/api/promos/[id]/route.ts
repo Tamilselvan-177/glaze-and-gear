@@ -15,11 +15,21 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { isActive } = body;
+    const { code, discountType, discountPercent, flatDiscountAmount, isActive, expiresAt, maxUses, minOrderValue, maxDiscountAmount } = body;
 
     const promo = await prisma.promoCode.update({
       where: { id },
-      data: { isActive }
+      data: { 
+        code: code ? code.toUpperCase() : undefined,
+        discountType: discountType,
+        discountPercent: discountType === 'PERCENTAGE' ? (discountPercent ? Number(discountPercent) : null) : null,
+        flatDiscountAmount: discountType === 'FLAT' ? (flatDiscountAmount ? Number(flatDiscountAmount) : null) : null,
+        isActive: isActive !== undefined ? isActive : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        maxUses: maxUses ? Number(maxUses) : null,
+        minOrderValue: minOrderValue ? Number(minOrderValue) : null,
+        maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null
+      }
     });
 
     return NextResponse.json(promo);

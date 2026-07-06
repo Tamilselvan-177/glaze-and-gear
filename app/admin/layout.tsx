@@ -42,6 +42,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className={`text-lg transition-opacity ${pathname?.startsWith('/admin/products') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>📦</span>
             <span className="font-medium text-sm tracking-wide">Products</span>
           </Link>
+          <Link onClick={() => setIsSidebarOpen(false)} href="/admin/inventory" className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname?.startsWith('/admin/inventory') ? 'bg-white/10 translate-x-1' : 'hover:bg-white/10 hover:translate-x-1'}`}>
+            <span className={`text-lg transition-opacity ${pathname?.startsWith('/admin/inventory') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>🏷️</span>
+            <span className="font-medium text-sm tracking-wide">Inventory</span>
+          </Link>
           <Link onClick={() => setIsSidebarOpen(false)} href="/admin/orders" className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname?.startsWith('/admin/orders') ? 'bg-white/10 translate-x-1' : 'hover:bg-white/10 hover:translate-x-1'}`}>
             <span className={`text-lg transition-opacity ${pathname?.startsWith('/admin/orders') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>🛒</span>
             <span className="font-medium text-sm tracking-wide">Orders</span>
@@ -53,6 +57,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link onClick={() => setIsSidebarOpen(false)} href="/admin/customers" className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname?.startsWith('/admin/customers') ? 'bg-white/10 translate-x-1' : 'hover:bg-white/10 hover:translate-x-1'}`}>
             <span className={`text-lg transition-opacity ${pathname?.startsWith('/admin/customers') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>👥</span>
             <span className="font-medium text-sm tracking-wide">Customers</span>
+          </Link>
+          <Link onClick={() => setIsSidebarOpen(false)} href="/admin/reviews" className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname?.startsWith('/admin/reviews') ? 'bg-white/10 translate-x-1' : 'hover:bg-white/10 hover:translate-x-1'}`}>
+            <span className={`text-lg transition-opacity ${pathname?.startsWith('/admin/reviews') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>⭐</span>
+            <span className="font-medium text-sm tracking-wide">Reviews</span>
+          </Link>
+          <Link onClick={() => setIsSidebarOpen(false)} href="/admin/newsletter" className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname?.startsWith('/admin/newsletter') ? 'bg-white/10 translate-x-1' : 'hover:bg-white/10 hover:translate-x-1'}`}>
+            <span className={`text-lg transition-opacity ${pathname?.startsWith('/admin/newsletter') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>📧</span>
+            <span className="font-medium text-sm tracking-wide">Newsletter</span>
           </Link>
           
           <div className="mt-8 mb-4 border-t border-white/10" />

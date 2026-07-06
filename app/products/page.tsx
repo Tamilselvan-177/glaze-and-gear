@@ -9,10 +9,12 @@ type Product = {
   category: string;
   price: number;
   image: string;
+  stock: number;
 };
 
 export default function ProductsPage() {
   const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("featured");
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,10 @@ export default function ProductsPage() {
     const matchesCategory = filter === "all" || p.category === filter;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
+  }).sort((a, b) => {
+    if (sort === "price-low") return a.price - b.price;
+    if (sort === "price-high") return b.price - a.price;
+    return 0; // "featured" keeps original order
   });
 
   return (
@@ -56,27 +62,46 @@ export default function ProductsPage() {
           </span>
         </div>
 
-        <div className="flex justify-center gap-3 flex-wrap">
-          {[
-            { id: "all", label: "All" },
-            { id: "glaze", label: "Glaze" },
-            { id: "gears", label: "Gears" }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              className={`py-3 px-6 border-2 border-[#98202E] font-bold text-sm uppercase tracking-widest rounded-full transition-all duration-300 ${
-                filter === tab.id ? "bg-[#98202E] text-white shadow-lg shadow-[#98202E]/20" : "bg-white text-[#98202E] hover:bg-[#98202E]/5"
-              }`}
+        <div className="flex justify-center items-center gap-6 flex-wrap w-full max-w-4xl">
+          {/* Category Tabs */}
+          <div className="flex gap-3 flex-wrap">
+            {[
+              { id: "all", label: "All" },
+              { id: "glaze", label: "Glaze" },
+              { id: "gears", label: "Gears" }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                className={`py-3 px-6 border-2 border-[#98202E] font-bold text-sm uppercase tracking-widest rounded-full transition-all duration-300 ${
+                  filter === tab.id ? "bg-[#98202E] text-white shadow-lg shadow-[#98202E]/20" : "bg-white text-[#98202E] hover:bg-[#98202E]/5"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="py-3 px-6 pr-10 border-2 border-[#98202E] font-bold text-sm uppercase tracking-widest rounded-full bg-white text-[#98202E] cursor-pointer outline-none hover:bg-[#98202E]/5 appearance-none"
             >
-              {tab.label}
-            </button>
-          ))}
+              <option value="featured">Sort: Featured</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#98202E]">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Product Grid */}
-      <section className="py-12 px-[5%] pb-[15vh] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 bg-white">
+      <section className="py-12 px-[5%] pb-[15vh] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 bg-white max-w-7xl mx-auto">
         {loading ? (
           Array(6).fill(0).map((_, i) => (
             <div key={i} className="bg-white border border-gray-100 p-6 rounded-[20px] animate-pulse">
@@ -93,7 +118,7 @@ export default function ProductsPage() {
         ) : filteredProducts.length === 0 ? (
           <div className="col-span-1 sm:col-span-2 lg:col-span-3 py-20 flex flex-col items-center justify-center">
             <h2 className="text-2xl font-serif text-gray-400 italic mb-6 text-center">No products found matching your search.</h2>
-            <button onClick={() => { setSearchQuery(""); setFilter("all"); }} className="px-8 py-3 bg-transparent border border-[#98202E] text-[#98202E] font-bold text-xs uppercase tracking-widest rounded-full hover:bg-[#98202E]/5 transition-all">
+            <button onClick={() => { setSearchQuery(""); setFilter("all"); setSort("featured"); }} className="px-8 py-3 bg-transparent border border-[#98202E] text-[#98202E] font-bold text-xs uppercase tracking-widest rounded-full hover:bg-[#98202E]/5 transition-all">
               Clear Filters
             </button>
           </div>
