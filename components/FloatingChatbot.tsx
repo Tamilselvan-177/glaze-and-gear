@@ -289,7 +289,7 @@ export default function FloatingChatbot() {
       {isDarkPage ? (
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className={`fixed bottom-6 right-6 w-16 h-16 bg-[#98202E] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-[9000] overflow-hidden border-2 border-white ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
+          className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#98202E] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-[9000] overflow-hidden border-2 border-white ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
           aria-label="Chat with us"
         >
           <img src="/g_g_logo_bg-removebg-preview.png" alt="Chat" className="w-full h-full object-cover invert brightness-0" />
@@ -297,15 +297,15 @@ export default function FloatingChatbot() {
       ) : (
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className={`fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex items-center justify-center hover:scale-110 transition-transform z-[9000] bg-white ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
+          className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex items-center justify-center hover:scale-110 transition-transform z-[9000] bg-white ${isOpen ? 'rotate-90 scale-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'}`}
           aria-label="Chat with us"
         >
-          <img src="/g_g_logo_bg-removebg-preview.png" alt="Chat" className="w-full h-full object-contain drop-shadow-xl" />
+          <img src="/g_g_logo_bg-removebg-preview.png" alt="Chat" className="w-full h-full object-contain drop-shadow-xl p-1" />
         </button>
       )}
 
       {/* Chat Window */}
-      <div className={`fixed bottom-6 right-6 w-full sm:w-[380px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden z-[9001] transition-all duration-300 origin-bottom-right ${isOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-50 opacity-0 pointer-events-none'}`}>
+      <div className={`fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:w-[380px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden z-[9001] transition-all duration-300 origin-bottom-right ${isOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-50 opacity-0 pointer-events-none'}`}>
         
         {/* Header */}
         <div className="bg-[#98202E] p-4 flex justify-between items-center text-white shrink-0 shadow-md z-10 relative">

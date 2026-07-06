@@ -287,35 +287,35 @@ export default function AdminOrders() {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
             
             {/* Modal Header */}
-            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <div>
-                <h2 className="text-2xl font-serif font-black tracking-tight text-gray-900">Order Details</h2>
-                <div className="flex gap-2 items-center mt-1">
-                  <p className="text-gray-500 font-mono text-sm">#{selectedOrder.id}</p>
-                  <span className="text-gray-300">•</span>
-                  <p className="text-gray-500 text-sm">{new Date(selectedOrder.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p>
+            <div className="px-4 py-5 sm:px-8 sm:py-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50 relative">
+              <div className="pr-12">
+                <h2 className="text-xl sm:text-2xl font-serif font-black tracking-tight text-gray-900">Order Details</h2>
+                <div className="flex flex-wrap gap-x-2 gap-y-1 items-center mt-1">
+                  <p className="text-gray-500 font-mono text-xs sm:text-sm">#{selectedOrder.id}</p>
+                  <span className="text-gray-300 hidden sm:inline">•</span>
+                  <p className="text-gray-500 text-xs sm:text-sm">{new Date(selectedOrder.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p>
                 </div>
               </div>
-              <div className="flex gap-3 items-center">
+              <div className="w-full sm:w-auto mt-2 sm:mt-0">
                 <a 
                   href={`/admin/orders/${selectedOrder.id}/invoice`} 
                   target="_blank" 
                   rel="noreferrer"
-                  className="bg-[#0a0a0a] text-white px-5 py-2.5 rounded-xl font-bold tracking-wide hover:bg-gray-800 transition-colors shadow-lg shadow-black/10 flex items-center gap-2 text-sm"
+                  className="bg-[#0a0a0a] text-white px-5 py-2.5 rounded-xl font-bold tracking-wide hover:bg-gray-800 transition-colors shadow-lg shadow-black/10 flex items-center justify-center gap-2 text-sm w-full sm:w-auto"
                 >
                   📄 Download Invoice
                 </a>
-                <button 
-                  onClick={() => setSelectedOrder(null)}
-                  className="w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors focus:outline-none"
-                >
-                  ✕
-                </button>
               </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors focus:outline-none"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-8">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8">
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Customer Box */}
@@ -410,19 +410,19 @@ export default function AdminOrders() {
                 
                 <div className="border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-100">
                   {selectedOrder.items?.map((item: any, index: number) => (
-                    <div key={index} className="flex gap-4 items-center p-4 bg-white hover:bg-gray-50 transition-colors">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200 shadow-sm">
+                    <div key={index} className="flex gap-3 sm:gap-4 items-center p-3 sm:p-4 bg-white hover:bg-gray-50 transition-colors">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200 shadow-sm">
                         {item.product?.image ? (
                           <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] sm:text-xs">No Img</div>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-900 text-base">{item.product?.name || 'Unknown Product'}</p>
-                        <p className="text-sm text-gray-500 mt-1">₹{item.price.toLocaleString()} × {item.quantity}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{item.product?.name || 'Unknown Product'}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">₹{item.price.toLocaleString()} × {item.quantity}</p>
                       </div>
-                      <div className="font-black text-gray-900 text-lg">
+                      <div className="font-black text-gray-900 text-base sm:text-lg shrink-0">
                         ₹{(item.price * item.quantity).toLocaleString()}
                       </div>
                     </div>
@@ -433,7 +433,7 @@ export default function AdminOrders() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end items-center">
+            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex justify-end items-center">
               <div className="w-full max-w-sm">
                 <div className="flex justify-between py-2 text-gray-600 text-sm">
                   <span className="font-bold">Subtotal</span>
